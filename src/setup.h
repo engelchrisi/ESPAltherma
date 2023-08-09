@@ -7,7 +7,7 @@
 //#define WIFI_IP 192, 168, 0, 5
 //#define WIFI_SUBNET 255, 255, 255, 0
 //#define WIFI_GATEWAY 192, 168, 0, 1
-//#define WIFI_PRIMARY_DNS 8, 8, 8, 8     //A DNS address is needed, even if it's not used 
+//#define WIFI_PRIMARY_DNS 8, 8, 8, 8     //A DNS address is needed, even if it's not used
 //#define WIFI_SECONDARY_DNS 8, 8, 4, 4   //A DNS address is needed, even if it's not used
 
 #define MQTT_SERVER "192.168.1.4"//**IP address here of your MQTT server**
@@ -22,11 +22,11 @@
 
 #if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus) || defined(ARDUINO_M5Stick_C_Plus2)  || defined(ARDUINO_M5Stack_Tough)
 // Values used when M5StickC, M5STickCPlus or M5Stick_C_Plus2 environment is selected:
-#define RX_PIN    36// Pin connected to the TX pin of X10A 
+#define RX_PIN    36// Pin connected to the TX pin of X10A
 #define TX_PIN    26// Pin connected to the RX pin of X10A
-#else 
+#else
 //Default GPIO PINs for Serial2:
-#define RX_PIN    16// Pin connected to the TX pin of X10A 
+#define RX_PIN    16// Pin connected to the TX pin of X10A
 #define TX_PIN    17// Pin connected to the RX pin of X10A
 #endif
 
@@ -58,12 +58,12 @@
 #define SG_RELAY_INACTIVE_STATE LOW
 #endif
 
-#define MAX_MSG_SIZE 7120//max size of the json message sent in mqtt 
+#define MAX_MSG_SIZE 7120//max size of the json message sent in mqtt
 
-//Uncomment this line if the JSON message should be in a Json Table format []. Use only for IOBroker Vis. 
+//Uncomment this line if the JSON message should be in a Json Table format []. Use only for IOBroker Vis.
 //#define JSONTABLE
 
-//Uncomment this if you want to activate the One Value <-> One Topic mode. Each value will be sent to a specific topic below 
+//Uncomment this if you want to activate the One Value <-> One Topic mode. Each value will be sent to a specific topic below
 // #define ONEVAL_ONETOPIC
 // #define MQTT_OneTopic "espaltherma/OneATTR/" //Keep the ending "/" !!
 
@@ -74,11 +74,11 @@
 //Uncomment *ONE* of the following according to your installation.
 //Then, open and edit the selected file in the /include/def/ folder and uncomment each values you are interested in.
 
-//To use a locale version eg German, change the path to the file to the localized version. 
+//To use a locale version eg German, change the path to the file to the localized version.
 
 //Eg:
-//instead of: #include "def/Altherma(EGSQH-A series 10kW GEO2).h" 
-//use: 
+//instead of: #include "def/Altherma(EGSQH-A series 10kW GEO2).h"
+//use:
 //            #include "def/German/Altherma(EGSQH-A series 10kW GEO2).h"
 //
 //Suported locales: French, German, Spanish.
