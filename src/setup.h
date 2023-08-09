@@ -71,7 +71,7 @@
 //
 //Suported locales: French, German, Spanish.
 
-//#include "def/ALTHERMA(BIZONE_CB_04-08KW).h"
+#include "def/German/ALTHERMA(BIZONE_CB_04-08KW).h"
 //#include "def/ALTHERMA(BIZONE_CB_11-16KW).h"
 //#include "def/ALTHERMA(GSHP).h"
 //#include "def/ALTHERMA(GSHP2).h"
