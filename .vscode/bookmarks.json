@@ -1,0 +1,39 @@
+{
+	"files": [
+		{
+			"path": "include/mqtt.h",
+			"bookmarks": [
+				{
+					"line": 52,
+					"column": 12,
+					"label": ""
+				},
+				{
+					"line": 60,
+					"column": 13,
+					"label": ""
+				},
+				{
+					"line": 117,
+					"column": 12,
+					"label": ""
+				},
+				{
+					"line": 124,
+					"column": 9,
+					"label": ""
+				}
+			]
+		},
+		{
+			"path": "src/main.cpp",
+			"bookmarks": [
+				{
+					"line": 200,
+					"column": 5,
+					"label": ""
+				}
+			]
+		}
+	]
+}
