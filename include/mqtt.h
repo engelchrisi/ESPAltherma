@@ -5,8 +5,11 @@
 #define MQTT_attr "espaltherma/ATTR"
 #define MQTT_lwt "espaltherma/LWT"
 
-#define EEPROM_CHK 1
-#define EEPROM_STATE 0
+// BYTE offsets
+#define EEPROM_ADDR_H1    0
+#define EEPROM_ADDR_H2    1
+#define EEPROM_ADDR_EOF   2 // contains an EEPROM_OK_CHAR as marker that EEPROM has valid info
+  #define EEPROM_OK_CHAR 'O' // ^ OK
 
 #define MQTT_attr "espaltherma/ATTR"
 #define MQTT_lwt "espaltherma/LWT"
@@ -43,24 +46,68 @@ void sendValues()
 #endif
 }
 
-void saveEEPROM(uint8_t state){
-    EEPROM.write(EEPROM_STATE,state);
+void saveEEPROM(int addr, uint8_t state){
+    EEPROM.write(addr,state);
     EEPROM.commit();
 }
 
 void readEEPROM(){
-  if ('R' == EEPROM.read(EEPROM_CHK)){
-    digitalWrite(PIN_THERM,EEPROM.read(EEPROM_STATE));
-    mqttSerial.printf("Restoring previous state: %s",(EEPROM.read(EEPROM_STATE) == HIGH)? "Off":"On" );
+  if (EEPROM_OK_CHAR == EEPROM.read(EEPROM_ADDR_EOF)){
+#ifdef PIN_THERM_H1
+    {
+      const uint8_t state= EEPROM.read(EEPROM_ADDR_H1);
+      digitalWrite(PIN_THERM_H1, state);
+      mqttSerial.printf("Restored previous H1 state: %s",(state == HIGH)? "Off":"On" );
+    }
+#endif
+#ifdef PIN_THERM_H2
+    {
+      const uint8_t state= EEPROM.read(EEPROM_ADDR_H2);
+      digitalWrite(PIN_THERM_H2, state);
+      mqttSerial.printf("Restored previous H2 state: %s",(state == HIGH)? "Off":"On" );
+    }
+#endif    
   }
   else{
-    mqttSerial.printf("EEPROM not initialized (%d). Initializing...",EEPROM.read(EEPROM_CHK));
-    EEPROM.write(EEPROM_CHK,'R');
-    EEPROM.write(EEPROM_STATE,HIGH);
+    mqttSerial.printf("EEPROM not initialized (%d). Initializing...",EEPROM.read(EEPROM_ADDR_EOF));
+    const uint8_t state= HIGH;
+#ifdef PIN_THERM_H1  
+    EEPROM.write(EEPROM_ADDR_H1, state);
+#endif
+#ifdef PIN_THERM_H2
+    EEPROM.write(EEPROM_ADDR_H2, state);
+#endif
+    EEPROM.write(EEPROM_ADDR_EOF, EEPROM_OK_CHAR);
     EEPROM.commit();
-    digitalWrite(PIN_THERM,HIGH);
+#ifdef PIN_THERM_H1  
+    digitalWrite(PIN_THERM_H1, state);
+#endif
+#ifdef PIN_THERM_H2
+    digitalWrite(PIN_THERM_H2, state);
+#endif
   }
 }
+
+#ifdef PIN_THERM_H1
+  const char* H1_SWITCH_CONFIG= 
+        "{"
+        "\"name\":\"AlthermaMainZone\","
+        "\"cmd_t\":\"~/THERM_MAINZ\","
+        "\"stat_t\":\"~/STATE_MAINZ\","
+        "\"pl_off\":\"OFF\","
+        "\"pl_on\":\"ON\","
+        "\"~\":\"espaltherma\"}";
+#endif
+#ifdef PIN_THERM_H2
+  const char* H2_SWITCH_CONFIG= 
+        "{"
+        "\"name\":\"AlthermaAddZone\","
+        "\"cmd_t\":\"~/THERM_ADDZ\","
+        "\"stat_t\":\"~/STATE_ADDZ\","
+        "\"pl_off\":\"OFF\","
+        "\"pl_on\":\"ON\","
+        "\"~\":\"espaltherma\"}";
+#endif
 
 void reconnectMqtt()
 {
@@ -73,12 +120,39 @@ void reconnectMqtt()
     if (client.connect("ESPAltherma-dev", MQTT_USERNAME, MQTT_PASSWORD, MQTT_lwt, 0, true, "Offline"))
     {
       Serial.println("connected!");
+      #if 1
       client.publish("homeassistant/sensor/espAltherma/config", "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/LWT\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"uniq_id\":\"espaltherma\",\"device\":{\"identifiers\":[\"ESPAltherma\"]}, \"~\":\"espaltherma\",\"json_attr_t\":\"~/ATTR\"}", true);
+      #else
+      client.publish("homeassistant/sensor/espAltherma/config", "{"
+                                                                " \"unique_id\":\"esp_altherma\","
+                                                                " \"name\":\"Altherma Sensors\","
+                                                                " \"stat_t\":\"~/LWT\","
+                                                                " \"avty_t\":\"~/LWT\","
+                                                                " \"pl_avail\":\"Online\","
+                                                                " \"pl_not_avail\":\"Offline\","
+                                                                // " \"uniq_id\":\"espaltherma\","
+                                                                " \"device\":{\"identifiers\":[\"ESPAltherma\"]},"
+                                                                " \"~\":\"espaltherma\","
+                                                                " \"json_attr_t\":\"~/ATTR\""
+                                                                "}"
+                                                                , true);
+      #endif
       client.publish(MQTT_lwt, "Online", true);
-      client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma\",\"cmd_t\":\"~/POWER\",\"stat_t\":\"~/STATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
+#ifdef PIN_THERM_H1
+      client.publish("homeassistant/switch/espAltherma3/config", H1_SWITCH_CONFIG, true);      
+      client.subscribe("espaltherma/THERM_MAINZ");
+#else
+      // Publish empty retained message so discovered entities are removed from HA
+      client.publish("homeassistant/switch/espAltherma3/config", "", true);      
+#endif
+#ifdef PIN_THERM_H2
+      client.publish("homeassistant/switch/espAltherma2/config", H2_SWITCH_CONFIG, true);
+      client.subscribe("espaltherma/THERM_ADDZ");
+#else
+      // Publish empty retained message so discovered entities are removed from HA
+      client.publish("homeassistant/switch/espAltherma2/config", "", true);      
+#endif
 
-      // Subscribe
-      client.subscribe("espaltherma/POWER");
 #ifdef PIN_SG1
       // Smart Grid
       client.publish("homeassistant/select/espAltherma/sg/config", "{\"availability\":[{\"topic\":\"espaltherma/LWT\",\"payload_available\":\"Online\",\"payload_not_available\":\"Offline\"}],\"availability_mode\":\"all\",\"unique_id\":\"espaltherma_sg\",\"device\":{\"identifiers\":[\"ESPAltherma\"],\"manufacturer\":\"ESPAltherma\",\"model\":\"M5StickC PLUS ESP32-PICO\",\"name\":\"ESPAltherma\"},\"icon\":\"mdi:solar-power\",\"name\":\"EspAltherma Smart Grid\",\"command_topic\":\"espaltherma/sg/set\",\"command_template\":\"{% if value == 'Free Running' %} 0 {% elif value == 'Forced Off' %} 1 {% elif value == 'Recommended On' %} 2 {% elif value == 'Forced On' %} 3 {% else %} 0 {% endif %}\",\"options\":[\"Free Running\",\"Forced Off\",\"Recommended On\",\"Forced On\"],\"state_topic\":\"espaltherma/sg/state\",\"value_template\":\"{% set mapper = { '0':'Free Running', '1':'Forced Off', '2':'Recommended On', '3':'Forced On' } %} {% set word = mapper[value] %} {{ word }}\"}", true);
@@ -107,7 +181,8 @@ void reconnectMqtt()
   }
 }
 
-void callbackTherm(byte *payload, unsigned int length)
+#if defined(PIN_THERM_H1) || defined(PIN_THERM_H2)
+void callbackTherm(unsigned int pin, int eepromAddr, const char* answerTopic, byte *payload, unsigned int length)
 {
   payload[length] = '\0';
 
@@ -115,16 +190,16 @@ void callbackTherm(byte *payload, unsigned int length)
   // Ok I'm not super proud of this, but it works :p
   if (payload[1] == 'F')
   { //turn off
-    digitalWrite(PIN_THERM, HIGH);
-    saveEEPROM(HIGH);
-    client.publish("espaltherma/STATE", "OFF", true);
+    digitalWrite(pin, HIGH);
+    saveEEPROM(eepromAddr, HIGH);
+    client.publish(answerTopic, "OFF", true);
     mqttSerial.println("Turned OFF");
   }
   else if (payload[1] == 'N')
   { //turn on
-    digitalWrite(PIN_THERM, LOW);
-    saveEEPROM(LOW);
-    client.publish("espaltherma/STATE", "ON", true);
+    digitalWrite(pin, LOW);
+    saveEEPROM(eepromAddr, LOW);
+    client.publish(answerTopic, "ON", true);
     mqttSerial.println("Turned ON");
   }
   else if (payload[0] == 'R')//R(eset/eboot)
@@ -138,6 +213,7 @@ void callbackTherm(byte *payload, unsigned int length)
     Serial.printf("Unknown message: %s\n", payload);
   }
 }
+#endif
 
 #ifdef PIN_SG1
 //Smartgrid callbacks
@@ -186,19 +262,36 @@ void callbackSg(byte *payload, unsigned int length)
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
-  Serial.printf("Message arrived [%s] : %s\n", topic, payload);
+  char buf[16]= "";
+  const int cnt= min(length, sizeof(buf)-1);
+  strncpy(buf, (const char*)payload, cnt);
+  buf[cnt]= 0;
 
-  if (strcmp(topic, "espaltherma/POWER") == 0)
+  Serial.printf("Message arrived [%s[%i]] : %s\n", topic, length, buf);
+
+#ifdef PIN_THERM_H1
+  if (strcmp(topic, "espaltherma/THERM_MAINZ") == 0)
   {
-    callbackTherm(payload, length);
+    callbackTherm(PIN_THERM_H1, EEPROM_ADDR_H1, "espaltherma/STATE_MAINZ", 
+                  payload, length);
   }
+  else 
+#endif
+#ifdef PIN_THERM_H2
+  if (strcmp(topic, "espaltherma/THERM_ADDZ") == 0)
+  {
+    callbackTherm(PIN_THERM_H2, EEPROM_ADDR_H2, "espaltherma/STATE_ADDZ", 
+                  payload, length);
+  }  
+  else 
+#endif
 #ifdef PIN_SG1
-  else if (strcmp(topic, "espaltherma/sg/set") == 0)
+  if (strcmp(topic, "espaltherma/sg/set") == 0)
   {
     callbackSg(payload, length);
   }
-#endif
   else
+#endif
   {
     Serial.printf("Unknown topic: %s\n", topic);
   }

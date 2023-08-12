@@ -198,8 +198,15 @@ void setup()
   Serial.begin(115200);
   setupScreen();
   MySerial.begin(9600, SERIAL_CONFIG, RX_PIN, TX_PIN);
-  pinMode(PIN_THERM, OUTPUT);
-  digitalWrite(PIN_THERM, HIGH);
+
+#ifdef PIN_THERM_H1  
+  pinMode(PIN_THERM_H1, OUTPUT);
+  digitalWrite(PIN_THERM_H1, HIGH);
+#endif
+#ifdef PIN_THERM_H2
+  pinMode(PIN_THERM_H2, OUTPUT);
+  digitalWrite(PIN_THERM_H2, HIGH);
+#endif
 
 #ifdef PIN_SG1
   //Smartgrid pins - Set first to the inactive state, before configuring as outputs (avoid false triggering when initializing)
@@ -240,6 +247,17 @@ void setup()
 
   initRegistries();
   mqttSerial.print("ESPAltherma started!");
+
+#if 0
+  // too early will not be logged 
+  mqttSerial.printf("HELLO WORLD!");
+  // check critial length of payload for PubSubClient::publish
+  // according to rumors - not verified
+  if (strlen(H1_SWITCH_CONFIG) >= 255)
+    mqttSerial.printf("Critical len H1_SWITCH_CONFIG: %i", strlen(H1_SWITCH_CONFIG));
+  if (strlen(H2_SWITCH_CONFIG) >= 255)
+    mqttSerial.printf("Critical len H2_SWITCH_CONFIG: %i", strlen(H2_SWITCH_CONFIG));
+#endif
 }
 
 void waitLoop(uint ms){

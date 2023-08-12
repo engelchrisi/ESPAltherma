@@ -4,27 +4,17 @@
 			"path": "include/mqtt.h",
 			"bookmarks": [
 				{
-					"line": 52,
+					"line": 65,
 					"column": 12,
 					"label": ""
 				},
 				{
-					"line": 60,
+					"line": 85,
 					"column": 13,
 					"label": ""
 				},
 				{
-					"line": 77,
-					"column": 16,
-					"label": ""
-				},
-				{
-					"line": 117,
-					"column": 12,
-					"label": ""
-				},
-				{
-					"line": 124,
+					"line": 199,
 					"column": 9,
 					"label": ""
 				}
@@ -34,7 +24,7 @@
 			"path": "src/main.cpp",
 			"bookmarks": [
 				{
-					"line": 200,
+					"line": 202,
 					"column": 5,
 					"label": ""
 				}

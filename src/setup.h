@@ -15,6 +15,9 @@
 #define MQTT_PASSWORD ""//leave empty if not set (bad!)
 #define MQTT_PORT 1883
 
+// #undef above values and define your own in this include
+// Add the whole folder to your .gitignore file to avoid check in:
+// src/SECRETS
 #include "SECRETS/setup_inc.h"
 
 #define FREQUENCY 30000 //query values every 30 sec
@@ -26,10 +29,11 @@
 #else 
 //Default GPIO PINs for Serial2:
 #define RX_PIN    16// Pin connected to the TX pin of X10A 
-#define TX_PIN    17// Pin connected to the RX pin of X10A
+#define TX_PIN    18// Pin connected to the RX pin of X10A
 #endif
 
-#define PIN_THERM 0// Pin connected to the thermostat relay (normally open)
+#define PIN_THERM_H1 39// Pin connected to the thermostat relay 35 H1 Main Heating (normally open)
+#define PIN_THERM_H2 37// Pin connected to the thermostat relay 35a H2 Additional Heating Zone (normally open)
 
 //Smart grid control - Optional:
 //Uncomment and set to enable SG mqtt functions
