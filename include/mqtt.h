@@ -57,20 +57,24 @@ void readEEPROM(){
     {
       const uint8_t state= EEPROM.read(EEPROM_ADDR_H1);
       digitalWrite(PIN_THERM_H1, state);
-      mqttSerial.printf("Restored previous H1 state: %s",(state == HIGH)? "Off":"On" );
+      const char *szState= (state == HIGH)? "OFF":"ON";
+      client.publish("espaltherma/STATE_MAINZ", szState, true);
+      mqttSerial.printf("Restored previous H1 state: %s",szState );
     }
 #endif
 #ifdef PIN_THERM_H2
     {
       const uint8_t state= EEPROM.read(EEPROM_ADDR_H2);
       digitalWrite(PIN_THERM_H2, state);
-      mqttSerial.printf("Restored previous H2 state: %s",(state == HIGH)? "Off":"On" );
+      const char *szState= (state == HIGH)? "OFF":"ON";
+      client.publish("espaltherma/STATE_ADDZ", szState, true);
+      mqttSerial.printf("Restored previous H2 state: %s",szState );
     }
 #endif    
   }
   else{
     mqttSerial.printf("EEPROM not initialized (%d). Initializing...",EEPROM.read(EEPROM_ADDR_EOF));
-    const uint8_t state= HIGH;
+    const uint8_t state= HIGH; // OFF
 #ifdef PIN_THERM_H1  
     EEPROM.write(EEPROM_ADDR_H1, state);
 #endif

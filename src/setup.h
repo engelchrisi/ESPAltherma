@@ -32,8 +32,9 @@
 #define TX_PIN    18// Pin connected to the RX pin of X10A
 #endif
 
-#define PIN_THERM_H1 39// Pin connected to the thermostat relay 35 H1 Main Heating (normally open)
-#define PIN_THERM_H2 37// Pin connected to the thermostat relay 35a H2 Additional Heating Zone (normally open)
+// Comment out if not used
+// #define PIN_THERM_H1 39// Pin connected to the thermostat relay 35 H1 Main Heating (normally open)
+// #define PIN_THERM_H2 37// Pin connected to the thermostat relay 35a H2 Additional Heating Zone (normally open)
 
 //Smart grid control - Optional:
 //Uncomment and set to enable SG mqtt functions
