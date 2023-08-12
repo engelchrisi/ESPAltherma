@@ -319,6 +319,8 @@ void setupScreen(){
 
 }
 
+#define ONBOARD_LED  15
+
 void setup()
 {
   Serial.begin(115200);
@@ -329,6 +331,8 @@ void setup()
   pinMode(SAFETY_RELAY_PIN, OUTPUT);
   digitalWrite(SAFETY_RELAY_PIN, !SAFETY_RELAY_ACTIVE_STATE);
 #endif
+
+  pinMode(ONBOARD_LED,OUTPUT);
 
 #ifdef PIN_THERM_H1
   pinMode(PIN_THERM_H1, OUTPUT);
@@ -423,6 +427,7 @@ void loop()
   //Querying all registries
   for (size_t i = 0; (i < 32) && registryIDs[i] != 0xFF; i++)
   {
+    digitalWrite(ONBOARD_LED,(i % 2 == 0)? HIGH:LOW);
     unsigned char buff[64] = {0};
     int tries = 0;
     while (!queryRegistry(registryIDs[i], buff, PROTOCOL) && tries++ < 3)
@@ -439,6 +444,7 @@ void loop()
     }
   }
   sendValues();//Send the full json message
+  digitalWrite(ONBOARD_LED,LOW);
   mqttSerial.printf("Done. Waiting %ld ms...", FREQUENCY - millis() + start);
   waitLoop(FREQUENCY - millis() + start);
 }

@@ -24,8 +24,18 @@
 			"path": "src/main.cpp",
 			"bookmarks": [
 				{
-					"line": 202,
+					"line": 206,
 					"column": 5,
+					"label": ""
+				}
+			]
+		},
+		{
+			"path": "include/def/German/ALTHERMA(BIZONE_CB_04-08KW).h",
+			"bookmarks": [
+				{
+					"line": 59,
+					"column": 0,
 					"label": ""
 				}
 			]
