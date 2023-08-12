@@ -75,7 +75,7 @@ void updateValues(char regID)
     client.publish(topicBuff, labels[i]->asString);
 
     #else
-    if (alpha){      
+    if (alpha){
 
       snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
     }
@@ -98,7 +98,7 @@ void extraLoop()
     ArduinoOTA.handle();
   }
 
-#if !defined(ARDUINO_M5Stick_C_Plus2) && defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus) 
+#if !defined(ARDUINO_M5Stick_C_Plus2) && defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus)
   if (M5.BtnA.wasPressed()){//Turn back ON screen
     M5.Axp.ScreenBreath(12);
     LCDTimeout = millis() + 30000;
@@ -236,7 +236,7 @@ void setup_wifi()
   WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
   WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
 #endif
-    
+
   if (bssid != nullptr)
   {
     WiFi.begin(WIFI_SSID, WIFI_PWD, wifi_channel, bssid);
@@ -295,7 +295,7 @@ void setupScreen(){
   M5.Lcd.setTextFont(1);
   M5.Lcd.setTextColor(TFT_GREEN);
 
-#elif defined(ARDUINO_M5Stick_C_Plus2)  
+#elif defined(ARDUINO_M5Stick_C_Plus2)
   M5.begin();
 #if !defined(ARDUINO_M5Stick_C_Plus2)
   M5.Axp.EnableCoulombcounter();
@@ -324,12 +324,19 @@ void setup()
   Serial.begin(115200);
   setupScreen();
   MySerial.begin(9600, SERIAL_CONFIG, RX_PIN, TX_PIN);
-  pinMode(PIN_THERM, OUTPUT);
-  // digitalWrite(PIN_THERM, PIN_THERM_ACTIVE_STATE);
 
 #ifdef SAFETY_RELAY_PIN
   pinMode(SAFETY_RELAY_PIN, OUTPUT);
   digitalWrite(SAFETY_RELAY_PIN, !SAFETY_RELAY_ACTIVE_STATE);
+#endif
+
+#ifdef PIN_THERM_H1
+  pinMode(PIN_THERM_H1, OUTPUT);
+  digitalWrite(PIN_THERM_H1, HIGH);
+#endif
+#ifdef PIN_THERM_H2
+  pinMode(PIN_THERM_H2, OUTPUT);
+  digitalWrite(PIN_THERM_H2, HIGH);
 #endif
 
 #ifdef PIN_SG1
@@ -361,7 +368,7 @@ void setup()
   ArduinoOTA.begin();
 
   #ifdef MQTT_ENCRYPTED
-  // Required to establish encrypted connections. 
+  // Required to establish encrypted connections.
   // If you want to be more secure here, you can use the CA certificate to allow the wifi client to verify the other party. NOTE: If you use the CA certificate here, then you need to make sure to update it here regulary!
   espClient.setInsecure();
   espClient.setTimeout(5);
@@ -381,6 +388,17 @@ void setup()
 
   initRegistries();
   mqttSerial.print("ESPAltherma started!");
+
+#if 0
+  // too early will not be logged
+  mqttSerial.printf("HELLO WORLD!");
+  // check critial length of payload for PubSubClient::publish
+  // according to rumors - not verified
+  if (strlen(H1_SWITCH_CONFIG) >= 255)
+    mqttSerial.printf("Critical len H1_SWITCH_CONFIG: %i", strlen(H1_SWITCH_CONFIG));
+  if (strlen(H2_SWITCH_CONFIG) >= 255)
+    mqttSerial.printf("Critical len H2_SWITCH_CONFIG: %i", strlen(H2_SWITCH_CONFIG));
+#endif
 }
 
 void waitLoop(uint ms){
