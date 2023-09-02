@@ -32,9 +32,10 @@
 #define TX_PIN    18// Pin connected to the RX pin of X10A
 #endif
 
-// Comment out if not used
-// #define PIN_THERM_H1 39// Pin connected to the thermostat relay 35 H1 Main Heating (normally open)
-// #define PIN_THERM_H2 37// Pin connected to the thermostat relay 35a H2 Additional Heating Zone (normally open)
+// Comment out if not used (GROVE PORT SCL/SDA: 33/32)
+// https://github.com/m5stack/M5Unit-RELAY/blob/master/examples/Unit_2RELAY_M5StickCPlus/Unit_2RELAY_M5StickCPlus.ino
+#define PIN_THERM_H1      32 // Pin connected to the thermostat relay 35 H1 Main Heating (normally open)
+#define PIN_THERM_H2      33// Pin connected to the thermostat relay 35a H2 Additional Heating Zone (normally open)
 
 //Smart grid control - Optional:
 //Uncomment and set to enable SG mqtt functions

@@ -155,14 +155,20 @@ void initRegistries(){
   }
 
   int i = 0;
+
   for (auto &&label : labelDefs)
   {
     if (!contains(registryIDs, sizeof(registryIDs), label.registryID))
     {
       mqttSerial.printf("Adding registry 0x%2x to be queried.\n", label.registryID);
       registryIDs[i++] = label.registryID;
+#ifdef _DEBUG  
+      break;
+  #pragma GCC warning "DEBUG mode: no registry entries added" 
+#endif      
     }
   }
+
   if (i == 0)
   {
     mqttSerial.printf("ERROR - No values selected in the include file. Stopping.\n");
@@ -205,11 +211,9 @@ void setup()
 
 #ifdef PIN_THERM_H1  
   pinMode(PIN_THERM_H1, OUTPUT);
-  digitalWrite(PIN_THERM_H1, HIGH);
 #endif
 #ifdef PIN_THERM_H2
   pinMode(PIN_THERM_H2, OUTPUT);
-  digitalWrite(PIN_THERM_H2, HIGH);
 #endif
 
 #ifdef PIN_SG1
@@ -229,7 +233,11 @@ void setup()
   readEEPROM();//Restore previous state
   mqttSerial.print("Setting up wifi...");
   setup_wifi();
-  ArduinoOTA.setHostname("ESPAltherma");
+#ifdef _DEBUG
+  ArduinoOTA.setHostname("espaltherma-DEBUG"); 
+#else
+  ArduinoOTA.setHostname("espaltherma"); 
+#endif
   ArduinoOTA.onStart([]() {
     busy = true;
   });
@@ -252,7 +260,7 @@ void setup()
   initRegistries();
   mqttSerial.print("ESPAltherma started!");
 
-#if 0
+#ifdef PIN_THERM_H1
   // too early will not be logged 
   mqttSerial.printf("HELLO WORLD!");
   // check critial length of payload for PubSubClient::publish
