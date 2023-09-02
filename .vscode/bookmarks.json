@@ -9,23 +9,8 @@
 					"label": ""
 				},
 				{
-					"line": 89,
-					"column": 13,
-					"label": ""
-				},
-				{
-					"line": 203,
+					"line": 204,
 					"column": 9,
-					"label": ""
-				}
-			]
-		},
-		{
-			"path": "src/main.cpp",
-			"bookmarks": [
-				{
-					"line": 206,
-					"column": 5,
 					"label": ""
 				}
 			]
@@ -36,6 +21,16 @@
 				{
 					"line": 59,
 					"column": 0,
+					"label": ""
+				}
+			]
+		},
+		{
+			"path": "src/main.cpp",
+			"bookmarks": [
+				{
+					"line": 236,
+					"column": 15,
 					"label": ""
 				}
 			]

@@ -67,18 +67,18 @@ void readEEPROM(){
     {
       const uint8_t state= EEPROM.read(EEPROM_ADDR_H1);
       digitalWrite(PIN_THERM_H1, state);
-      const char *szState= (state == HIGH)? "OFF":"ON";
+      const char *szState= (state != HIGH)? "OFF":"ON";
       client.publish("espaltherma/STATE_MAINZ", szState, true);
-      mqttSerial.printf("Restored previous H1 state: %s",szState );
+      mqttSerial.printf("=> Restored previous H1(main) state: %s\n",szState );
     }
 #endif
 #ifdef PIN_THERM_H2
     {
       const uint8_t state= EEPROM.read(EEPROM_ADDR_H2);
       digitalWrite(PIN_THERM_H2, state);
-      const char *szState= (state == HIGH)? "OFF":"ON";
+      const char *szState= (state != HIGH)? "OFF":"ON";
       client.publish("espaltherma/STATE_ADDZ", szState, true);
-      mqttSerial.printf("Restored previous H2 state: %s",szState );
+      mqttSerial.printf("=> Restored previous H2(addit) state: %s\n",szState );
     }
 #endif
   }
@@ -89,6 +89,7 @@ void readEEPROM(){
     EEPROM.write(EEPROM_ADDR_H1, state);
 #endif
 #ifdef PIN_THERM_H2
+    digitalWrite(PIN_THERM_H2, state);
     EEPROM.write(EEPROM_ADDR_H2, state);
 #endif
     EEPROM.write(EEPROM_ADDR_EOF, EEPROM_OK_CHAR);
@@ -160,18 +161,11 @@ void reconnectMqtt()
       client.publish("homeassistant/switch/espAltherma3/config", "", true);
 #endif
 #ifdef PIN_THERM_H2
-      client.publish("homeassistant/switch/espAltherma2/config", H2_SWITCH_CONFIG, true);
+      client.publish("homeassistant/switch/espAltherma01/config", H2_SWITCH_CONFIG, true);
       client.subscribe("espaltherma/THERM_ADDZ");
 #else
       // Publish empty retained message so discovered entities are removed from HA
       client.publish("homeassistant/switch/espAltherma2/config", "", true);
-#endif
-
-#ifdef PIN_SG1
-      // Smart Grid
-      client.publish("homeassistant/select/espAltherma/sg/config", "{\"availability\":[{\"topic\":\"espaltherma/LWT\",\"payload_available\":\"Online\",\"payload_not_available\":\"Offline\"}],\"availability_mode\":\"all\",\"unique_id\":\"espaltherma_sg\",\"device\":{\"identifiers\":[\"ESPAltherma\"],\"manufacturer\":\"ESPAltherma\",\"model\":\"M5StickC PLUS ESP32-PICO\",\"name\":\"ESPAltherma\"},\"icon\":\"mdi:solar-power\",\"name\":\"EspAltherma Smart Grid\",\"command_topic\":\"espaltherma/sg/set\",\"command_template\":\"{% if value == 'Free Running' %} 0 {% elif value == 'Forced Off' %} 1 {% elif value == 'Recommended On' %} 2 {% elif value == 'Forced On' %} 3 {% else %} 0 {% endif %}\",\"options\":[\"Free Running\",\"Forced Off\",\"Recommended On\",\"Forced On\"],\"state_topic\":\"espaltherma/sg/state\",\"value_template\":\"{% set mapper = { '0':'Free Running', '1':'Forced Off', '2':'Recommended On', '3':'Forced On' } %} {% set word = mapper[value] %} {{ word }}\"}", true);
-      client.subscribe("espaltherma/sg/set");
-      client.publish("espaltherma/sg/state", "0");
 #endif
 
 #ifdef SAFETY_RELAY_PIN
@@ -180,7 +174,12 @@ void reconnectMqtt()
       client.subscribe("espaltherma/SAFETY");
 #endif
 
-#ifndef PIN_SG1
+#ifdef PIN_SG1
+      // Smart Grid
+      client.publish("homeassistant/select/espAltherma/sg/config", "{\"availability\":[{\"topic\":\"espaltherma/LWT\",\"payload_available\":\"Online\",\"payload_not_available\":\"Offline\"}],\"availability_mode\":\"all\",\"unique_id\":\"espaltherma_sg\",\"device\":{\"identifiers\":[\"ESPAltherma\"],\"manufacturer\":\"ESPAltherma\",\"model\":\"M5StickC PLUS ESP32-PICO\",\"name\":\"ESPAltherma\"},\"icon\":\"mdi:solar-power\",\"name\":\"EspAltherma Smart Grid\",\"command_topic\":\"espaltherma/sg/set\",\"command_template\":\"{% if value == 'Free Running' %} 0 {% elif value == 'Forced Off' %} 1 {% elif value == 'Recommended On' %} 2 {% elif value == 'Forced On' %} 3 {% else %} 0 {% endif %}\",\"options\":[\"Free Running\",\"Forced Off\",\"Recommended On\",\"Forced On\"],\"state_topic\":\"espaltherma/sg/state\",\"value_template\":\"{% set mapper = { '0':'Free Running', '1':'Forced Off', '2':'Recommended On', '3':'Forced On' } %} {% set word = mapper[value] %} {{ word }}\"}", true);
+      client.subscribe("espaltherma/sg/set");
+      client.publish("espaltherma/sg/state", "0");
+#else
       // Publish empty retained message so discovered entities are removed from HA
       client.publish("homeassistant/select/espAltherma/sg/config", "", true);
 #endif
@@ -211,10 +210,15 @@ void callbackTherm(unsigned int pin, int eepromAddr, const char* answerTopic, by
   // Ok I'm not super proud of this, but it works :p
   if (payload[1] == 'F')
   { //turn off
-    digitalWrite(pin, HIGH);
-    saveEEPROM(eepromAddr, HIGH);
-    client.publish(answerTopic, "OFF", true);
-    mqttSerial.println("Turned OFF");
+    if (digitalRead(pin) != LOW) {
+      digitalWrite(pin, LOW);
+      saveEEPROM(eepromAddr, LOW);
+      client.publish(answerTopic, "OFF", true);
+      mqttSerial.println("Turned OFF");
+    }
+    else {
+      mqttSerial.println("Was already turned OFF");
+    }
   }
   else if (payload[1] == 'N')
   { //turn on
