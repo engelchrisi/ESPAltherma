@@ -33,6 +33,7 @@ void sendValues()
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gmW\",", "M5BatPwr", M5.Axp.GetBatPower());
 #endif
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%ddBm\",", "WifiRSSI", WiFi.RSSI());
+  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%s\",", "IP", WiFi.localIP().toString().c_str());
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%d\",", "FreeMem", ESP.getFreeHeap());
   jsonbuff[strlen(jsonbuff) - 1] = '}';
 #ifdef JSONTABLE
@@ -49,6 +50,7 @@ void sendValues()
 void saveEEPROM(int addr, uint8_t state){
     EEPROM.write(addr,state);
     EEPROM.commit();
+    mqttSerial.printf("Committed [%i]=%i", addr, (int)state);
 }
 
 void readEEPROM(){
@@ -59,7 +61,7 @@ void readEEPROM(){
       digitalWrite(PIN_THERM_H1, state);
       const char *szState= (state != HIGH)? "OFF":"ON";
       client.publish("espaltherma/STATE_MAINZ", szState, true);
-      mqttSerial.printf("=> Restored previous H1(main) state: %s\n",szState );
+      mqttSerial.printf("Restored previous H1(main) state: %s\n",szState );
     }
 #endif
 #ifdef PIN_THERM_H2
@@ -68,7 +70,7 @@ void readEEPROM(){
       digitalWrite(PIN_THERM_H2, state);
       const char *szState= (state != HIGH)? "OFF":"ON";
       client.publish("espaltherma/STATE_ADDZ", szState, true);
-      mqttSerial.printf("=> Restored previous H2(addit) state: %s\n",szState );
+      mqttSerial.printf("Restored previous H2(addit) state: %s\n",szState );
     }
 #endif    
   }
@@ -178,6 +180,7 @@ void reconnectMqtt()
       }
     }
   }
+  mqttSerial.println("MQTT reconnected");
 }
 
 #if defined(PIN_THERM_H1) || defined(PIN_THERM_H2)
@@ -193,10 +196,10 @@ void callbackTherm(unsigned int pin, int eepromAddr, const char* answerTopic, by
       digitalWrite(pin, LOW);
       saveEEPROM(eepromAddr, LOW);
       client.publish(answerTopic, "OFF", true);
-      mqttSerial.println("Turned OFF");
+      mqttSerial.printf("[%i]: Turned OFF => %s", eepromAddr, answerTopic);
     }
     else {
-      mqttSerial.println("Was already turned OFF");
+      mqttSerial.printf("[%i]: Was already turned OFF => %s", eepromAddr, answerTopic);
     }
   }
   else if (payload[1] == 'N')
@@ -205,10 +208,10 @@ void callbackTherm(unsigned int pin, int eepromAddr, const char* answerTopic, by
       digitalWrite(pin, HIGH);
       saveEEPROM(eepromAddr, HIGH);
       client.publish(answerTopic, "ON", true);
-      mqttSerial.println("Turned ON");
+      mqttSerial.printf("[%i]: Turned ON => %s", eepromAddr, answerTopic);
     }
     else {
-      mqttSerial.println("Was already turned ON");
+      mqttSerial.printf("[%i]: Was already turned ON => %s", eepromAddr, answerTopic);
     }      
   }
   else if (payload[0] == 'R')//R(eset/eboot)
@@ -276,7 +279,7 @@ void callback(char *topic, byte *payload, unsigned int length)
   strncpy(buf, (const char*)payload, cnt);
   buf[cnt]= 0;
 
-  Serial.printf("Message arrived [%s[%i]] : %s\n", topic, length, buf);
+  mqttSerial.printf("Message arrived [%s[%i]] : %s\n", topic, length, buf);
 
 #ifdef PIN_THERM_H1
   if (strcmp(topic, "espaltherma/THERM_MAINZ") == 0)

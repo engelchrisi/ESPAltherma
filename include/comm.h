@@ -72,7 +72,9 @@ bool queryRegistry(char regID, unsigned char *buffer, char protocol='I')
     queryLength = 3;
   }
 
+#ifdef _DEBUG
   mqttSerial.printf("Querying register 0x%02x... ", regID);
+#endif
   //Sending command to serial
   MySerial.flush(SERIAL_FLUSH_TX_ONLY); //Prevent possible pending info on the read
   MySerial.write((uint8_t*) prep, queryLength);
@@ -115,7 +117,9 @@ bool queryRegistry(char regID, unsigned char *buffer, char protocol='I')
     delay(500);
     return false;
   }
+#ifdef _DEBUG  
   logBuffer(buffer, len);
+#endif
   if (getCRC(buffer, len - 1) != buffer[len - 1])
   {
     mqttSerial.printf("ERROR: Wrong CRC on register 0x%02x. Calculated 0x%2x but got 0x%2x\nBuffer: ",regID, getCRC(buffer, len - 1), buffer[len - 1]);

@@ -160,7 +160,9 @@ void initRegistries(){
   {
     if (!contains(registryIDs, sizeof(registryIDs), label.registryID))
     {
+#ifdef _DEBUG      
       mqttSerial.printf("Adding registry 0x%2x to be queried.\n", label.registryID);
+#endif
       registryIDs[i++] = label.registryID;
 #ifdef _DEBUG  
       break;
@@ -230,7 +232,6 @@ void setup()
 #endif
 
   EEPROM.begin(10);
-  readEEPROM();//Restore previous state
   mqttSerial.print("Setting up wifi...");
   setup_wifi();
 #ifdef _DEBUG
@@ -255,14 +256,12 @@ void setup()
   mqttSerial.print("Connecting to MQTT server...");
   mqttSerial.begin(&client, "espaltherma/log");
   reconnectMqtt();
-  mqttSerial.println("OK!");
 
   initRegistries();
   mqttSerial.print("ESPAltherma started!");
-
+  readEEPROM();//Restore previous state
+  
 #ifdef PIN_THERM_H1
-  // too early will not be logged 
-  mqttSerial.printf("HELLO WORLD!");
   // check critial length of payload for PubSubClient::publish
   // according to rumors - not verified
   if (strlen(H1_SWITCH_CONFIG) >= 255)
@@ -312,6 +311,8 @@ void loop()
   }
   sendValues();//Send the full json message
   digitalWrite(ONBOARD_LED,LOW);
+#ifdef _DEBUG
   mqttSerial.printf("Done. Waiting %ld ms...", FREQUENCY - millis() + start);
+#endif
   waitLoop(FREQUENCY - millis() + start);
 }
