@@ -1,0 +1,9 @@
+# Enable logging
+# https://www.esphome.io/components/logger.html?highlight=logger+log#manual-tag-specific-log-levels
+logger:
+  level: ${log_level}
+
+api:
+  encryption:
+    key: $api_encryption_key
+  reboot_timeout: 1h
