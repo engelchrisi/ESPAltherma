@@ -4,8 +4,8 @@
 #   - !include ./common/external_components/espaltherma_exc/gen/binary_sensor_list.yaml
 
 - platform: espaltherma_exc
-  name: "Thermostat#1"
-  id: thermostat1
+  name: "Thermostat"
+  id: thermostat
   espaltherma_id: espalterma_controller
   # max_retries: 3
   # retry_interval_ms: 1000
@@ -70,8 +70,8 @@
   # max_retries: 3
   # retry_interval_ms: 1000
 - platform: espaltherma_exc
-  name: "Thermostat#2"
-  id: thermostat
+  name: "Ext. Thermostat"
+  id: ext_thermostat
   espaltherma_id: espalterma_controller
   # max_retries: 3
   # retry_interval_ms: 1000

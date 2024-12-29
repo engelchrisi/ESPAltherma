@@ -1,11 +1,11 @@
 substitutions:
   devicename: esp-altherma
   hostname: esp-altherma
-  static_ip: 192.168.178.245
+  static_ip: # TODO
   # Get a new API key from:
   # https://esphome.io/components/api.html?highlight=randomly%20generated
-  api_encryption_key: TODO
-  log_level: WARN
+  api_encryption_key: # TODO
+  log_level: DEBUG
   # ERROR => avoid roundtrip > 30ms warnings
   # //  - ERROR: ESP_LOGE
   # //  - WARN: ESP_LOGW
@@ -36,7 +36,8 @@ esphome:
 external_components:
   - source: github://engelchrisi/esphome-axp192
   - source: github://engelchrisi/esphome-m5stack4relay
-  # Extract the espaltherma_exc component like this. Files from the gen folder are included below.
+  ########################################################################################################
+  # TODO: Extract the espaltherma_exc component like this. Files from the gen folder are included below.
   # esphome
   #   esp-altherma.yaml
   #   + common
@@ -51,6 +52,8 @@ external_components:
       type: local
       path: ./components
     components: [ "espaltherma_exc" ]
+  #
+  ########################################################################################################
 
 ota:
   - platform: esphome

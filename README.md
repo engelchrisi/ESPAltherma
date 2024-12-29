@@ -53,13 +53,15 @@ _If this project has any value for you, please consider [buying me a 🍺](https
 
 # Getting started
 
-This is an ESPhome component based on the source from the espaltherma project.
+This is an ESPhome component using the source from the [ESPAltherma](https://github.com/raomin/ESPAltherma) project.
 I am using the label defintions from this file ALTHERMA(BIZONE_CB_04-08KW).h.
-They are enhanced with unit and id, s. esphome\common\external_components\espaltherma_exc\labelDefinitions.h
+They are enhanced with unit and id, s. components\espaltherma_exc\labelDefinitions.h
 
 If you have other labelDefinitions you need to run
-esphome\common\external_components\espaltherma_exc\generate_sensors.py
+components\espaltherma_exc\generate_sensors.py
 once in order to get the *sensor_list.yaml generated in the gen folder.
+
+Go through the TODOs in example_config\esp-altherma.yaml.
 
 # License
 ESPAltherma is licensed under ![MIT Licence](https://img.shields.io/github/license/raomin/ESPAltherma.svg?style=for-the-badge)
