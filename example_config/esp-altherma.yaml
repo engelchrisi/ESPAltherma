@@ -1,0 +1,283 @@
+substitutions:
+  devicename: esp-altherma
+  hostname: esp-altherma
+  static_ip: 192.168.178.245
+  # Get a new API key from:
+  # https://esphome.io/components/api.html?highlight=randomly%20generated
+  api_encryption_key: TODO
+  log_level: WARN
+  # ERROR => avoid roundtrip > 30ms warnings
+  # //  - ERROR: ESP_LOGE
+  # //  - WARN: ESP_LOGW
+  # //  - INFO: ESP_LOGI
+  # //  - DEBUG: ESP_LOGD
+  # //  - VERBOSE: ESP_LOGV
+  # //  - VERY_VERBOSE: ESP_LOGVV
+  TAG: "espyaml"
+
+esphome:
+  # Also used as prefix for each sensor
+  name: espaltherma
+  friendly_name: ESP Altherma
+  platform: ESP32
+  board: m5stick-c
+  platformio_options:
+    upload_speed: 115200
+  # libraries:
+  #   - EEPROM
+  on_boot:
+    priority: -100.0
+    then:
+      - logger.log:
+          format: "on_boot -100 reached"
+          level: INFO
+
+
+external_components:
+  - source: github://engelchrisi/esphome-axp192
+  - source: github://engelchrisi/esphome-m5stack4relay
+  # Extract the espaltherma_exc component like this. Files from the gen folder are included below.
+  # esphome
+  #   esp-altherma.yaml
+  #   + common
+  #       + device_base.yaml
+  #       + wifi.yaml
+  #       + secrets.yaml
+  #   + components
+  #       + espaltherma_exc
+  #          + gen
+  #          ...
+  - source:
+      type: local
+      path: ./components
+    components: [ "espaltherma_exc" ]
+
+ota:
+  - platform: esphome
+    password: "c9ee47209a41e8bdf0da734c1baae577"
+
+packages:
+  wifi: !include ./common/wifi.yaml
+  device_base: !include ./common/device_base.yaml
+
+status_led:
+  pin:
+    # WARNING Pin 10 (9-10) might already be used by the flash interface in QUAD IO flash mode.
+    number: GPIO10
+    inverted: true
+
+spi:
+  clk_pin: GPIO13
+  # WARNING GPIO15 is a strapping PIN and should only be used for I/O with care.
+  # Attaching external pullup/down resistors to strapping pins can cause unexpected failures.
+  # See https://esphome.io/guides/faq.html#why-am-i-getting-a-warning-about-strapping-pins
+  # , you can add ignore_strapping_warning: true to the relevant pin configurations.
+  mosi_pin: GPIO15
+
+# Built-in I2C Bus. Bus_external is for devices connected via the HAT pins. Not sure which interface is used for devices connected via the Grove port
+i2c:
+  - id: i2c_internal
+    sda: 21
+    scl: 22
+    scan: true
+  - id: i2c_external
+    sda: 32
+    scl: 33
+    scan: true
+
+esp32_touch:
+  #setup_mode: true
+  iir_filter: 10ms
+
+# time:
+  # - platform: homeassistant
+  #   id: homeassistant_time
+#   - platform: sntp
+#     id: sntp_time
+#     timezone: "Europe/Berlin"
+
+# Mandatory otherwise hub error
+espaltherma_exc:
+  id: espalterma_controller
+
+# https://esphome.io/components/web_server.html#config-webserver-grouping
+web_server:
+  port: 80
+  ota: false
+  version: 3
+
+debug:
+  update_interval: 60s
+
+sensor:
+  - !include components/espaltherma_exc/gen/sensor_list.yaml
+
+  # https://esphome.io/components/debug.html
+  - platform: debug
+    free:
+      name: "Heap Free"
+    # fragmentation:
+    #   name: "Heap Fragmentation"
+    block:
+      name: "Heap Max Block"
+    loop_time:
+      name: "Loop Time"
+
+  - platform: uptime
+    name: "Uptime"
+
+    # AXP192 power management - must be present to initialize TFT power on
+  - platform: axp192
+    model: M5STICKC
+    address: 0x34
+    i2c_id: i2c_internal
+    update_interval: 60s
+    battery_level:
+      name: "Battery Level"
+      id: "m5stick_batterylevel"
+
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 60s
+
+  - platform: m5stack4relay
+    id: m5stack_4relay_id
+    i2c_id: i2c_external
+
+binary_sensor: !include ./components/espaltherma_exc/gen/binary_sensor_list.yaml
+
+text_sensor:
+  - !include ./components/espaltherma_exc/gen/text_sensor_list.yaml
+
+  - platform: debug
+    # device:
+    #   name: "Device Info"
+    reset_reason:
+      name: "Reset Reason"
+  - platform: version
+    name: "ESPHome version"
+
+# [9.8.4]=3 (Wärmepumpentarif = Smart-Grid)
+# https://raomin.github.io/ESPAltherma/
+# => Step 4 (optional) - Smart grid features
+select:
+  - platform: template
+    name: Smart Grid Mode
+    id: smart_grid_mode
+    options:
+      - "Normal"       # HP works like if SG features are disabled/not used
+      # - "ForcedOff"  # Heating and DHW will be turned OFF
+      - "Recommended"  # HP will increase DHW setpoint as well as LW setpoint (documentation says +5 °C, but my tests actually show +6 °C)
+      - "ForcedOn"     # HP will increase DHW setpoint and will use its full power to heat DHW (to 70 °C)
+    lambda: |-
+        const m5stack4relay::RelayBit sg1= m5stack4relay::RelayBit::RELAY3;
+        const m5stack4relay::RelayBit sg2= m5stack4relay::RelayBit::RELAY4;
+
+        const bool sg1State= id(m5stack_4relay_id)->get_relay_state(sg1);
+        const bool sg2State= id(m5stack_4relay_id)->get_relay_state(sg2);
+
+        std::string res= "UNKNOWN";
+
+        if (!sg1State && !sg2State) {
+          res= "Normal";
+        } else if (!sg1State && sg2State) {
+          res= "ForcedOff";
+        } else if (sg1State && !sg2State) {
+          res= "Recommended";
+        } else if (sg1State && sg2State) {
+          res= "ForcedOn";
+        }
+
+        return res;
+    set_action:
+      lambda: |-
+        bool state1= false;
+        bool state2= false;
+
+        ESP_LOGD("esp", "selected: %s", x.c_str());
+
+        if (x == "Normal")
+        {
+          state1= state2= false;
+        }
+        /*else if (x == "ForcedOff")
+        {
+          state1= false;
+          state2= true;
+        } */
+        else if (x == "Recommended")
+        {
+          state1= true;
+          state2= false;
+        }
+        else if (x == "ForcedOn")
+        {
+          state1= true;
+          state2= true;
+        }
+
+        const m5stack4relay::RelayBit sg1= m5stack4relay::RelayBit::RELAY3;
+        const m5stack4relay::RelayBit sg2= m5stack4relay::RelayBit::RELAY4;
+        id(m5stack_4relay_id)->set_relays(sg1, state1, sg2, state2);
+        id(smart_grid_mode).publish_state(x);
+
+switch:
+  - platform: template
+    name: "Fussboden Hzg"
+    id: main_zone_switch
+    restore_mode: RESTORE_DEFAULT_OFF
+    lambda: |-
+      const m5stack4relay::RelayBit bit= m5stack4relay::RelayBit::RELAY1;
+      return id(m5stack_4relay_id)->get_relay_state(bit);
+    turn_on_action:
+      lambda: |-
+        const m5stack4relay::RelayBit bit= m5stack4relay::RelayBit::RELAY1;
+        id(m5stack_4relay_id)->set_relay(bit, true);
+    turn_off_action:
+      lambda: |-
+        const m5stack4relay::RelayBit bit= m5stack4relay::RelayBit::RELAY1;
+        id(m5stack_4relay_id)->set_relay(bit, false);
+
+  - platform: template
+    name: "Heizkörper"
+    id: addit_zone_switch
+    restore_mode: RESTORE_DEFAULT_OFF
+    lambda: |-
+
+      const m5stack4relay::RelayBit bit= m5stack4relay::RelayBit::RELAY2;
+      return id(m5stack_4relay_id)->get_relay_state(bit);
+    turn_on_action:
+      lambda: |-
+        const m5stack4relay::RelayBit bit= m5stack4relay::RelayBit::RELAY2;
+        id(m5stack_4relay_id)->set_relay(bit, true);
+    turn_off_action:
+      lambda: |-
+        const m5stack4relay::RelayBit bit= m5stack4relay::RelayBit::RELAY2;
+        id(m5stack_4relay_id)->set_relay(bit, false);
+
+  - platform: template
+    name: "Smart Grid 1 (S10S)"
+    id: smart_grid_1
+    restore_mode: RESTORE_DEFAULT_OFF
+    lambda: |-
+      const m5stack4relay::RelayBit bit= m5stack4relay::RelayBit::RELAY3;
+      return id(m5stack_4relay_id)->get_relay_state(bit);
+    turn_on_action:
+      lambda: |-
+        // by intention empty - Switch cannot be changed. Use mode dropdown instead!
+    turn_off_action:
+      lambda: |-
+        // by intention empty - Switch cannot be changed. Use mode dropdown instead!
+  - platform: template
+    name: "Smart Grid 2 (S11S)"
+    id: smart_grid_2
+    restore_mode: RESTORE_DEFAULT_OFF
+    lambda: |-
+      const m5stack4relay::RelayBit bit= m5stack4relay::RelayBit::RELAY4;
+      return id(m5stack_4relay_id)->get_relay_state(bit);
+    turn_on_action:
+      lambda: |-
+        // by intention empty - Switch cannot be changed. Use mode dropdown instead!
+    turn_off_action:
+      lambda: |-
+        // by intention empty - Switch cannot be changed. Use mode dropdown instead!
