@@ -98,7 +98,7 @@
 //#include "def/Altherma(EPRA D_D7 ETSH-X 16P30-50 E_E7 series 14-18kW-ECH2O).h"
 //#include "def/Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW).h"
 //#include "def/Altherma(EPRA E ETSH-X 16P30-50 E series 8-12kW-ECH2O).h"
-//#include "def/Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW).h"
+#include "def/Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW).h"
 //#include "def/Altherma(ERGA D EHSH-X P30-50 D series 04-08kW-ECH2O).h"
 //#include "def/Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW).h"
 //#include "def/Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW).h"
